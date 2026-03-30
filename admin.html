@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>球隊成績輸入管理</title>
+  <title>成績輸入管理 - 建中駝客隊</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
     body { background-color: #f8f9fa; font-family: 'Helvetica Neue', Arial, sans-serif; }
@@ -19,7 +19,7 @@
       <div class="card">
         <div class="header-bg text-center">
           <h3 class="mb-0">⛳ 新增賽事成績</h3>
-          <small>系統將自動計算 WHS 差點</small>
+          <small>自動計算 WHS 差點</small>
         </div>
         
         <div class="card-body p-4">
@@ -27,8 +27,10 @@
 
           <form id="scoreForm">
             <div class="mb-3">
-              <label for="playerName" class="form-label fw-bold">球員姓名 (需與資料庫名稱一致)</label>
-              <input type="text" class="form-control" id="playerName" placeholder="例如：王小明" required>
+              <label for="playerName" class="form-label fw-bold">球員姓名</label>
+              <select class="form-select" id="playerName" required disabled>
+                <option value="">載入球員名單中...</option>
+              </select>
             </div>
 
             <div class="mb-3">
@@ -37,7 +39,7 @@
             </div>
 
             <div class="mb-3">
-              <label for="courseSelect" class="form-label fw-bold">比賽球場 (從 Google Sheet 載入)</label>
+              <label for="courseSelect" class="form-label fw-bold">比賽球場</label>
               <select class="form-select" id="courseSelect" required disabled>
                 <option value="">載入球場資料中...</option>
               </select>
@@ -45,7 +47,7 @@
             </div>
 
             <div class="mb-4">
-              <label for="grossScore" class="form-label fw-bold">總桿數 (Gross Score)</label>
+              <label for="grossScore" class="form-label fw-bold">總桿數</label>
               <input type="number" class="form-control" id="grossScore" placeholder="例如：85" required min="50" max="200">
             </div>
 
@@ -62,20 +64,83 @@
   </div>
 </div>
 
-<script>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+  import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
+
   // ==========================================
+  // 1. 基本設定區
+  // ==========================================
+  
   // 請在這裡填入你的 Google Apps Script Web App 網址
-  // ==========================================
   const GAS_API_URL = "https://script.google.com/macros/s/AKfycbx3cO5-OYjnSSEr0aZGjPubkT5g28Ttp_ob35lBXboMXBifdiEMd6fvE6GJXLEJM2QBYg/exec"; 
 
-  // 儲存從後端抓來的球場資料
+  // 你的 Firebase 設定檔
+  const firebaseConfig = {
+    apiKey: "AIzaSyCpMFygSmUWsLxizZkds9v_EiHNeWOsT_c",
+    authDomain: "cksh-handicap.firebaseapp.com",
+    projectId: "cksh-handicap",
+    storageBucket: "cksh-handicap.firebasestorage.app",
+    messagingSenderId: "878448349821",
+    appId: "1:878448349821:web:9f70e7ee27cdb6cd5ed714"
+  };
+
+  // 初始化 Firebase
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
   let coursesData = [];
 
-  // 網頁載入完成後，立刻去抓球場資料
-  document.addEventListener("DOMContentLoaded", async () => {
+  // ==========================================
+  // 2. 網頁載入時的初始化動作
+  // ==========================================
+  document.addEventListener("DOMContentLoaded", () => {
     // 設定今天日期為預設值
     document.getElementById("playDate").valueAsDate = new Date();
     
+    // 同時去抓取球場清單與球員名單
+    fetchCourses();
+    fetchPlayers();
+  });
+
+  // ==========================================
+  // 3. 從 Firestore 抓取球員名單 (下拉選單)
+  // ==========================================
+  async function fetchPlayers() {
+    try {
+      const querySnapshot = await getDocs(collection(db, "players"));
+      const select = document.getElementById("playerName");
+      select.innerHTML = '<option value="">請選擇球員...</option>';
+      
+      let players = [];
+      querySnapshot.forEach((doc) => {
+        players.push({
+          id: doc.id,
+          name: doc.data().name_zh || doc.id
+        });
+      });
+
+      // 依照名字筆畫或拼音排序，方便尋找
+      players.sort((a, b) => a.name.localeCompare(b.name));
+
+      players.forEach(p => {
+        const option = document.createElement("option");
+        option.value = p.id; // 我們設計用名字當作 ID
+        option.textContent = p.name;
+        select.appendChild(option);
+      });
+      
+      select.disabled = false;
+    } catch (error) {
+      showAlert("讀取球員資料失敗，請檢查網路連線。", "danger");
+      console.error(error);
+    }
+  }
+
+  // ==========================================
+  // 4. 從 GAS 抓取球場清單
+  // ==========================================
+  async function fetchCourses() {
     try {
       const response = await fetch(GAS_API_URL);
       const result = await response.json();
@@ -90,17 +155,15 @@
       showAlert("無法連線到後端 API，請確認網址是否正確。", "danger");
       console.error(error);
     }
-  });
+  }
 
-  // 把球場資料塞入下拉選單
   function populateCourseDropdown() {
     const select = document.getElementById("courseSelect");
     select.innerHTML = '<option value="">請選擇球場與 Tee 台...</option>';
     
     coursesData.forEach((course, index) => {
       const option = document.createElement("option");
-      option.value = index; // 用陣列索引當 value，方便之後取資料
-      // 顯示格式： 東華 - Regular (Male)
+      option.value = index;
       option.textContent = `${course.course_name} - ${course.tee_color} (${course.gender})`;
       select.appendChild(option);
     });
@@ -108,7 +171,7 @@
     select.disabled = false;
   }
 
-  // 當使用者選擇球場時，顯示該球場的 CR 和 Slope
+  // 顯示球場細節 (CR & Slope)
   document.getElementById("courseSelect").addEventListener("change", (e) => {
     const detailDiv = document.getElementById("courseDetails");
     const selectedIndex = e.target.value;
@@ -121,21 +184,28 @@
     }
   });
 
-  // 處理表單送出
+  // ==========================================
+  // 5. 處理表單送出 (傳給 GAS 計算)
+  // ==========================================
   document.getElementById("scoreForm").addEventListener("submit", async (e) => {
-    e.preventDefault(); // 防止網頁重新整理
+    e.preventDefault(); 
     
-    const selectedIndex = document.getElementById("courseSelect").value;
-    if (selectedIndex === "") {
+    const selectedCourseIndex = document.getElementById("courseSelect").value;
+    if (selectedCourseIndex === "") {
       showAlert("請選擇球場！", "warning");
       return;
     }
 
-    const selectedCourse = coursesData[selectedIndex];
+    const playerId = document.getElementById("playerName").value;
+    if (playerId === "") {
+      showAlert("請選擇球員！", "warning");
+      return;
+    }
+
+    const selectedCourse = coursesData[selectedCourseIndex];
     
-    // 整理要傳送給後端的資料
     const postData = {
-      player_id: document.getElementById("playerName").value.trim(),
+      player_id: playerId,
       date: document.getElementById("playDate").value,
       gross_score: document.getElementById("grossScore").value,
       course_name: selectedCourse.course_name,
@@ -143,14 +213,11 @@
       slope_rating: selectedCourse.slope_rating
     };
 
-    // 切換按鈕狀態 (Loading)
     setLoading(true);
 
     try {
-      // 呼叫 GAS POST API
       const response = await fetch(GAS_API_URL, {
         method: "POST",
-        // 使用 text/plain 避免跨域預檢 (CORS preflight) 問題，GAS 後端一樣能解析 JSON
         headers: { "Content-Type": "text/plain;charset=utf-8" },
         body: JSON.stringify(postData)
       });
@@ -165,32 +232,30 @@
           msg += `<br>⚠️ 該球員場次尚不足 3 場，差點暫不更新。`;
         }
         showAlert(msg, "success");
-        // 清空總桿數欄位，方便輸入下一筆
+        // 清空總桿數，保留球員與球場，方便連續輸入
         document.getElementById("grossScore").value = "";
       } else {
         showAlert("❌ 錯誤：" + result.message, "danger");
       }
     } catch (error) {
-      showAlert("❌ 送出失敗，請檢查網路連線或 API 設定。", "danger");
+      showAlert("❌ 送出失敗，請檢查網路或 API 設定。", "danger");
       console.error(error);
     } finally {
       setLoading(false);
     }
   });
 
-  // 顯示訊息框的輔助函式
+  // ==========================================
+  // 輔助函式 (顯示訊息 & 按鈕狀態)
+  // ==========================================
   function showAlert(htmlMessage, type) {
     const alertBox = document.getElementById("alertBox");
     alertBox.className = `alert alert-${type}`;
     alertBox.innerHTML = htmlMessage;
     alertBox.classList.remove("d-none");
-    // 如果是成功訊息，10秒後自動隱藏
-    if(type === "success") {
-        setTimeout(() => alertBox.classList.add("d-none"), 10000);
-    }
+    if(type === "success") setTimeout(() => alertBox.classList.add("d-none"), 10000);
   }
 
-  // 控制按鈕 Loading 狀態的輔助函式
   function setLoading(isLoading) {
     document.getElementById("btnText").classList.toggle("d-none", isLoading);
     document.getElementById("btnSpinner").classList.toggle("d-none", !isLoading);
