@@ -118,7 +118,7 @@
           let data = doc.data();
           players.push({
             id: doc.id,
-            name: data.name_zh || "未知",
+            name: data.name_zh || doc.id, // <--- 只要加上 doc.id 當作備案即可！
             handicap: data.current_handicap || 0,
             prevRank: data.previous_rank || 0,
             rounds: data.total_rounds || 0,
