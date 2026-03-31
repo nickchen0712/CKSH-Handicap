@@ -3,47 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>建中駝客隊差點排行榜 - 個人紀錄</title>
+  <title>建中駝客隊 - 個人紀錄</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
     body { background-color: #f4f6f9; font-family: 'Helvetica Neue', Arial, sans-serif; }
     .header-banner {
       background: linear-gradient(135deg, #198754 0%, #146c43 100%);
-      color: white;
-      padding: 30px 0;
-      margin-bottom: 30px;
-      border-radius: 0 0 20px 20px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      color: white; padding: 30px 0; margin-bottom: 30px; border-radius: 0 0 20px 20px;
     }
-    .profile-card {
-      background: white;
-      border-radius: 15px;
-      padding: 20px;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-      margin-bottom: 20px;
-    }
-    .stat-box {
-      text-align: center;
-      padding: 15px;
-      background-color: #f8f9fa;
-      border-radius: 10px;
-    }
+    .profile-card { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; }
+    .stat-box { text-align: center; padding: 15px; background-color: #f8f9fa; border-radius: 10px; }
     .stat-title { font-size: 0.9rem; color: #6c757d; margin-bottom: 5px; }
     .stat-value { font-size: 1.5rem; font-weight: bold; color: #198754; }
-    .table thead th {
-      background-color: #f8f9fa;
-      color: #495057;
-      border-bottom: 2px solid #dee2e6;
-      text-align: center;
-      white-space: nowrap;
-    }
-    .table tbody td {
-      text-align: center;
-      vertical-align: middle;
-    }
-    .best-score-row {
-      background-color: #e8f5e9 !important; /* 標記最佳成績的淺綠色背景 */
-    }
+    .best-score-row { background-color: #e8f5e9 !important; }
   </style>
 </head>
 <body>
@@ -51,49 +23,43 @@
   <div class="header-banner text-center">
     <div class="container">
       <h2 class="fw-bold">🐫 建中駝客隊差點排行榜</h2>
-      <p class="mb-0">球員歷史成績與 WHS 差點紀錄</p>
+      <p class="mb-0">個人歷史戰績紀錄</p>
     </div>
   </div>
 
   <div class="container mb-5">
     <div class="row justify-content-center">
       <div class="col-lg-10">
-        
-        <div class="mb-3">
-          <a href="index.html" class="btn btn-outline-secondary">← 返回總排行榜</a>
-        </div>
-
+        <div class="mb-3"><a href="index.html" class="btn btn-outline-secondary">← 返回總排行榜</a></div>
         <div id="loading" class="text-center py-5">
           <div class="spinner-border text-success" role="status"></div>
-          <p class="mt-3 text-muted">載入球員資料中...</p>
         </div>
 
         <div id="contentArea" class="d-none">
-          
           <div class="profile-card">
             <h3 id="playerNameDisplay" class="fw-bold text-center mb-4">載入中...</h3>
             <div class="row g-3">
               <div class="col-6 col-md-3">
                 <div class="stat-box">
-                  <div class="stat-title">最新 WHS 差點</div>
-                  <div class="stat-value" id="playerHandicap">-</div>
+                  <div class="stat-title">最新差點</div>
+                  <div class="stat-value" id="playerHandicap">--</div>
                 </div>
               </div>
               <div class="col-6 col-md-3">
                 <div class="stat-box">
                   <div class="stat-title">總參賽場次</div>
-                  <div class="stat-value text-dark" id="playerRounds">-</div>
+                  <div class="stat-value text-dark" id="playerRounds">0</div>
                 </div>
               </div>
               <div class="col-6 col-md-3">
                 <div class="stat-box">
                   <div class="stat-title">平均桿數</div>
-                  <div class="stat-value text-dark" id="playerAvgScore">-</div>
+                  <div class="stat-value text-dark" id="playerAvgScore">--</div>
                 </div>
               </div>
               <div class="col-6 col-md-3">
                 <div class="stat-box">
-                  <div class="stat-title">系統最新排名</div>
+                  <div class="stat-title">排名</div>
                   <div class="stat-value text-primary" id="playerRank">-</div>
                 </div>
               </div>
@@ -101,26 +67,21 @@
           </div>
 
           <div class="profile-card table-responsive">
-            <h5 class="fw-bold mb-3">⛳ 歷史成績紀錄 <small class="text-muted fw-normal">(由新到舊)</small></h5>
-            <table class="table table-hover">
+            <h5 class="fw-bold mb-3">⛳ 歷史成績紀錄</h5>
+            <table class="table table-hover text-center">
               <thead>
                 <tr>
-                  <th>比賽日期</th>
-                  <th>球場名稱</th>
-                  <th>總桿數</th>
-                  <th>Course Rating</th>
-                  <th>Slope Rating</th>
-                  <th>單場差異值 (Diff)</th>
+                  <th>日期</th>
+                  <th>球場</th>
+                  <th>總桿</th>
+                  <th>CR</th>
+                  <th>Slope</th>
+                  <th>Diff</th>
                 </tr>
               </thead>
-              <tbody id="scoreList">
-                </tbody>
+              <tbody id="scoreList"></tbody>
             </table>
-            <div id="noDataMessage" class="text-center text-muted py-4 d-none">
-              目前尚無比賽紀錄。
-            </div>
           </div>
-
         </div>
       </div>
     </div>
@@ -130,7 +91,6 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
     import { getFirestore, doc, getDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
 
-    // 你的 Firebase 設定檔
     const firebaseConfig = {
       apiKey: "AIzaSyCpMFygSmUWsLxizZkds9v_EiHNeWOsT_c",
       authDomain: "cksh-handicap.firebaseapp.com",
@@ -146,85 +106,46 @@
     document.addEventListener("DOMContentLoaded", fetchPlayerData);
 
     async function fetchPlayerData() {
-      // 從網址列取得球員 ID (例如：profile.html?player=王小明)
       const urlParams = new URLSearchParams(window.location.search);
       const playerId = urlParams.get('player');
-
-      if (!playerId) {
-        document.getElementById("loading").innerHTML = `<div class="text-danger">找不到球員資訊，請回首頁重新選擇。</div>`;
-        return;
-      }
+      if (!playerId) return;
 
       try {
-        // 1. 取得球員基本資料
-        const playerRef = doc(db, "players", playerId);
-        const playerSnap = await getDoc(playerRef);
-
+        const playerSnap = await getDoc(doc(db, "players", playerId));
         if (playerSnap.exists()) {
-          const pData = playerSnap.data();
-          document.getElementById("playerNameDisplay").textContent = pData.name_zh || playerId;
-          document.getElementById("playerHandicap").textContent = pData.current_handicap ? pData.current_handicap.toFixed(1) : "N/A";
-          document.getElementById("playerRounds").textContent = pData.total_rounds || 0;
-          document.getElementById("playerAvgScore").textContent = pData.average_score ? pData.average_score.toFixed(1) : "N/A";
-          document.getElementById("playerRank").textContent = pData.current_rank || "-";
-        } else {
-          document.getElementById("playerNameDisplay").textContent = "未知球員";
+          const p = playerSnap.data();
+          document.getElementById("playerNameDisplay").textContent = p.name_zh || playerId;
+          document.getElementById("playerHandicap").textContent = (p.current_handicap < 999) ? p.current_handicap.toFixed(1) : "--";
+          document.getElementById("playerRounds").textContent = p.total_rounds || 0;
+          document.getElementById("playerAvgScore").textContent = (p.average_score > 0) ? p.average_score.toFixed(1) : "--";
         }
 
-        // 2. 取得該球員的所有歷史成績
-        const scoresRef = collection(db, "scores");
-        const q = query(scoresRef, where("player_id", "==", playerId));
+        const q = query(collection(db, "scores"), where("player_id", "==", playerId));
         const querySnapshot = await getDocs(q);
-        
         let scores = [];
-        querySnapshot.forEach((doc) => {
-          scores.push(doc.data());
+        querySnapshot.forEach(doc => scores.push(doc.data()));
+        scores.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        const tbody = document.getElementById("scoreList");
+        let bestGross = Math.min(...scores.map(s => s.gross_score));
+
+        scores.forEach(s => {
+          const tr = document.createElement("tr");
+          if (s.gross_score === bestGross) tr.classList.add("best-score-row");
+          tr.innerHTML = `
+            <td>${s.date}</td>
+            <td>${s.course_name}</td>
+            <td class="fw-bold">${s.gross_score}</td>
+            <td>${s.course_rating.toFixed(1)}</td>
+            <td>${s.slope_rating}</td>
+            <td class="text-primary">${s.differential.toFixed(1)}</td>
+          `;
+          tbody.appendChild(tr);
         });
 
-        // 隱藏 loading，顯示內容區
         document.getElementById("loading").classList.add("d-none");
         document.getElementById("contentArea").classList.remove("d-none");
-
-        renderScores(scores);
-
-      } catch (error) {
-        console.error("讀取資料失敗：", error);
-        document.getElementById("loading").innerHTML = `<div class="text-danger">讀取資料發生錯誤，請稍後再試。</div>`;
-      }
-    }
-
-    function renderScores(scores) {
-      const tbody = document.getElementById("scoreList");
-      const noDataMsg = document.getElementById("noDataMessage");
-      
-      if (scores.length === 0) {
-        noDataMsg.classList.remove("d-none");
-        return;
-      }
-
-      // 依照日期由新到舊排序 (前端排序，避免 Firestore 複雜索引設定)
-      scores.sort((a, b) => new Date(b.date) - new Date(a.date));
-
-      // 找出最低桿數 (標記用)
-      let bestGross = Math.min(...scores.map(s => s.gross_score));
-
-      scores.forEach(score => {
-        const isBest = score.gross_score === bestGross;
-        const tr = document.createElement("tr");
-        
-        // 如果是該球員的最佳總桿數，給予稍微不同的背景色標記
-        if (isBest) tr.classList.add("best-score-row");
-
-        tr.innerHTML = `
-          <td>${score.date}</td>
-          <td>${score.course_name}</td>
-          <td class="fw-bold ${isBest ? 'text-success' : ''}">${score.gross_score} ${isBest ? '👑' : ''}</td>
-          <td>${score.course_rating.toFixed(1)}</td>
-          <td>${score.slope_rating}</td>
-          <td class="text-primary">${score.differential.toFixed(1)}</td>
-        `;
-        tbody.appendChild(tr);
-      });
+      } catch (e) { console.error(e); }
     }
   </script>
 </body>
