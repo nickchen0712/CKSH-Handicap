@@ -59,7 +59,7 @@
               </div>
               <div class="col-6 col-md-3">
                 <div class="stat-box">
-                  <div class="stat-title">排名</div>
+                  <div class="stat-title">系統最新排名</div>
                   <div class="stat-value text-primary" id="playerRank">-</div>
                 </div>
               </div>
@@ -111,15 +111,41 @@
       if (!playerId) return;
 
       try {
+        // 1. 抓取個人基本資料
         const playerSnap = await getDoc(doc(db, "players", playerId));
+        let currentHcp = 999;
         if (playerSnap.exists()) {
           const p = playerSnap.data();
+          currentHcp = p.current_handicap || 999;
           document.getElementById("playerNameDisplay").textContent = p.name_zh || playerId;
-          document.getElementById("playerHandicap").textContent = (p.current_handicap < 999) ? p.current_handicap.toFixed(1) : "--";
+          document.getElementById("playerHandicap").textContent = (currentHcp < 999) ? currentHcp.toFixed(1) : "--";
           document.getElementById("playerRounds").textContent = p.total_rounds || 0;
           document.getElementById("playerAvgScore").textContent = (p.average_score > 0) ? p.average_score.toFixed(1) : "--";
         }
 
+        // 2. 抓取全隊資料來計算排名 (確保排名與首頁邏輯一致)
+        const allPlayersSnap = await getDocs(collection(db, "players"));
+        let allPlayers = [];
+        allPlayersSnap.forEach(d => {
+          let dData = d.data();
+          allPlayers.push({ id: d.id, handicap: dData.current_handicap || 999 });
+        });
+
+        // 排序規則與 index.html 相同
+        allPlayers.sort((a, b) => {
+          if (a.handicap >= 999 && b.handicap < 999) return 1;
+          if (a.handicap < 999 && b.handicap >= 999) return -1;
+          return a.handicap - b.handicap;
+        });
+
+        const rankIndex = allPlayers.findIndex(p => p.id === playerId);
+        if (rankIndex !== -1 && currentHcp < 999) {
+          document.getElementById("playerRank").textContent = rankIndex + 1;
+        } else {
+          document.getElementById("playerRank").textContent = "-";
+        }
+
+        // 3. 抓取個人成績紀錄
         const q = query(collection(db, "scores"), where("player_id", "==", playerId));
         const querySnapshot = await getDocs(q);
         let scores = [];
@@ -127,11 +153,11 @@
         scores.sort((a, b) => new Date(b.date) - new Date(a.date));
 
         const tbody = document.getElementById("scoreList");
-        let bestGross = Math.min(...scores.map(s => s.gross_score));
+        let bestGross = scores.length > 0 ? Math.min(...scores.map(s => s.gross_score)) : 0;
 
         scores.forEach(s => {
           const tr = document.createElement("tr");
-          if (s.gross_score === bestGross) tr.classList.add("best-score-row");
+          if (s.gross_score === bestGross && bestGross > 0) tr.classList.add("best-score-row");
           tr.innerHTML = `
             <td>${s.date}</td>
             <td>${s.course_name}</td>
