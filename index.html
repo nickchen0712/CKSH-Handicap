@@ -86,21 +86,20 @@
         
         querySnapshot.forEach((doc) => {
           let data = doc.data();
-          // 【防護鎖】：確保數值存在，否則給予預設值
           players.push({
             id: doc.id,
             name: data.name_zh || doc.id,
-            handicap: data.current_handicap !== undefined ? data.current_handicap : null,
+            handicap: data.current_handicap !== undefined ? data.current_handicap : 999,
             prevRank: data.previous_rank || 0,
             rounds: data.total_rounds || 0,
-            avgScore: data.average_score || null
+            avgScore: data.average_score || 0
           });
         });
 
-        // 排序：差點越低越前面，沒差點的排最後
+        // 排序邏輯：有差點的人 (小於 999) 依高低排序，沒差點的人 (等於 999) 排在最後
         players.sort((a, b) => {
-          if (a.handicap === null) return 1;
-          if (b.handicap === null) return -1;
+          if (a.handicap >= 999 && b.handicap < 999) return 1;
+          if (a.handicap < 999 && b.handicap >= 999) return -1;
           return a.handicap - b.handicap;
         });
 
@@ -117,14 +116,20 @@
 
       players.forEach((player, index) => {
         const currentRank = index + 1;
+        
+        // 只有具備正式差點的人才顯示排名獎牌
         let rankHtml = currentRank;
-        if (currentRank === 1) rankHtml = `<span class="rank-1">🥇 ${currentRank}</span>`;
-        if (currentRank === 2) rankHtml = `<span class="rank-2">🥈 ${currentRank}</span>`;
-        if (currentRank === 3) rankHtml = `<span class="rank-3">🥉 ${currentRank}</span>`;
+        if (player.handicap < 999) {
+          if (currentRank === 1) rankHtml = `<span class="rank-1">🥇 ${currentRank}</span>`;
+          if (currentRank === 2) rankHtml = `<span class="rank-2">🥈 ${currentRank}</span>`;
+          if (currentRank === 3) rankHtml = `<span class="rank-3">🥉 ${currentRank}</span>`;
+        } else {
+          rankHtml = "-"; // 沒差點的人不顯示排名數字
+        }
 
-        // 處理數值顯示，避免 .toFixed 報錯
-        const displayHandicap = (player.handicap !== null) ? player.handicap.toFixed(1) : "--";
-        const displayAvgScore = (player.avgScore !== null) ? player.avgScore.toFixed(1) : "--";
+        // 數值顯示判定：如果是 999 則顯示為 --
+        const displayHandicap = (player.handicap < 999) ? player.handicap.toFixed(1) : "--";
+        const displayAvgScore = (player.avgScore > 0) ? player.avgScore.toFixed(1) : "--";
 
         const tr = document.createElement("tr");
         tr.innerHTML = `
