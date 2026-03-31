@@ -123,7 +123,7 @@
           document.getElementById("playerAvgScore").textContent = (p.average_score > 0) ? p.average_score.toFixed(1) : "--";
         }
 
-        // 2. 抓取全隊資料來計算排名 (確保排名與首頁邏輯一致)
+        // 2. 抓取全隊資料來計算排名
         const allPlayersSnap = await getDocs(collection(db, "players"));
         let allPlayers = [];
         allPlayersSnap.forEach(d => {
@@ -131,7 +131,6 @@
           allPlayers.push({ id: d.id, handicap: dData.current_handicap || 999 });
         });
 
-        // 排序規則與 index.html 相同
         allPlayers.sort((a, b) => {
           if (a.handicap >= 999 && b.handicap < 999) return 1;
           if (a.handicap < 999 && b.handicap >= 999) return -1;
@@ -158,8 +157,26 @@
         scores.forEach(s => {
           const tr = document.createElement("tr");
           if (s.gross_score === bestGross && bestGross > 0) tr.classList.add("best-score-row");
+          
+          // --- 新增：日期格式化邏輯 ---
+          let displayDate = s.date;
+          if (displayDate) {
+            try {
+              const d = new Date(displayDate);
+              if (!isNaN(d.getTime())) {
+                const yyyy = d.getFullYear();
+                const mm = String(d.getMonth() + 1).padStart(2, '0');
+                const dd = String(d.getDate()).padStart(2, '0');
+                displayDate = `${yyyy}-${mm}-${dd}`;
+              }
+            } catch (e) {
+              // 解析失敗則維持原樣
+            }
+          }
+          // ----------------------------
+
           tr.innerHTML = `
-            <td>${s.date}</td>
+            <td>${displayDate}</td>
             <td>${s.course_name}</td>
             <td class="fw-bold">${s.gross_score}</td>
             <td>${s.course_rating.toFixed(1)}</td>
