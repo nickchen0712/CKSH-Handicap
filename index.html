@@ -15,38 +15,14 @@
       border-radius: 0 0 20px 20px;
       box-shadow: 0 4px 10px rgba(0,0,0,0.1);
     }
-    .table-container {
-      background: white;
-      border-radius: 15px;
-      padding: 20px;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-    }
-    .table thead th {
-      background-color: #f8f9fa;
-      color: #495057;
-      border-bottom: 2px solid #dee2e6;
-      text-align: center;
-      white-space: nowrap;
-    }
-    .table tbody td {
-      text-align: center;
-      vertical-align: middle;
-    }
-    .player-name {
-      color: #0d6efd;
-      font-weight: bold;
-      text-decoration: none;
-    }
-    .player-name:hover {
-      color: #0a58ca;
-      text-decoration: underline;
-    }
-    .rank-1 { font-size: 1.5rem; font-weight: bold; color: #ffc107; } /* 金牌 */
-    .rank-2 { font-size: 1.2rem; font-weight: bold; color: #adb5bd; } /* 銀牌 */
-    .rank-3 { font-size: 1.1rem; font-weight: bold; color: #cd7f32; } /* 銅牌 */
-    .trend-up { color: #dc3545; font-size: 0.9rem; } /* 排名上升 (紅色箭頭) */
-    .trend-down { color: #198754; font-size: 0.9rem; } /* 排名下降 (綠色箭頭) */
-    .trend-flat { color: #6c757d; font-size: 0.9rem; } /* 持平 */
+    .table-container { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+    .table thead th { background-color: #f8f9fa; text-align: center; white-space: nowrap; }
+    .table tbody td { text-align: center; vertical-align: middle; }
+    .player-name { color: #0d6efd; font-weight: bold; text-decoration: none; }
+    .player-name:hover { text-decoration: underline; }
+    .rank-1 { font-size: 1.5rem; font-weight: bold; color: #ffc107; }
+    .rank-2 { font-size: 1.2rem; font-weight: bold; color: #adb5bd; }
+    .rank-3 { font-size: 1.1rem; font-weight: bold; color: #cd7f32; }
   </style>
 </head>
 <body>
@@ -54,7 +30,7 @@
   <div class="header-banner text-center">
     <div class="container">
       <h1 class="display-5 fw-bold">⛳ 建中駝客隊差點排行榜</h1>
-      <p class="lead mb-0">WHS (World Handicap System) 即時排名系統</p>
+      <p class="lead mb-0">WHS 即時排名系統</p>
     </div>
   </div>
 
@@ -62,7 +38,6 @@
     <div class="row justify-content-center">
       <div class="col-lg-10">
         <div class="table-container table-responsive">
-          
           <div id="loading" class="text-center py-5">
             <div class="spinner-border text-success" role="status"></div>
             <p class="mt-3 text-muted">載入排行榜中...</p>
@@ -79,8 +54,7 @@
                 <th>最新差點</th>
               </tr>
             </thead>
-            <tbody id="playerList">
-              </tbody>
+            <tbody id="playerList"></tbody>
           </table>
         </div>
       </div>
@@ -91,7 +65,6 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
     import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
 
-    // 你的 Firebase 設定檔
     const firebaseConfig = {
       apiKey: "AIzaSyCpMFygSmUWsLxizZkds9v_EiHNeWOsT_c",
       authDomain: "cksh-handicap.firebaseapp.com",
@@ -101,11 +74,9 @@
       appId: "1:878448349821:web:9f70e7ee27cdb6cd5ed714"
     };
 
-    // 初始化 Firebase
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // 網頁載入後立即拉取資料
     document.addEventListener("DOMContentLoaded", fetchLeaderboard);
 
     async function fetchLeaderboard() {
@@ -113,32 +84,30 @@
         const querySnapshot = await getDocs(collection(db, "players"));
         let players = [];
         
-        // 將資料整理進陣列
         querySnapshot.forEach((doc) => {
           let data = doc.data();
+          // 【防護鎖】：確保數值存在，否則給予預設值
           players.push({
             id: doc.id,
-            name: data.name_zh || doc.id, // <--- 只要加上 doc.id 當作備案即可！
-            handicap: data.current_handicap || 0,
+            name: data.name_zh || doc.id,
+            handicap: data.current_handicap !== undefined ? data.current_handicap : null,
             prevRank: data.previous_rank || 0,
             rounds: data.total_rounds || 0,
-            avgScore: data.average_score || 0
+            avgScore: data.average_score || null
           });
         });
 
-        // 依照最新差點 (handicap) 由低到高進行排序
+        // 排序：差點越低越前面，沒差點的排最後
         players.sort((a, b) => {
-          if (a.handicap === b.handicap) {
-            return a.avgScore - b.avgScore;
-          }
+          if (a.handicap === null) return 1;
+          if (b.handicap === null) return -1;
           return a.handicap - b.handicap;
         });
 
         renderTable(players);
-
       } catch (error) {
-        console.error("讀取資料失敗：", error);
-        document.getElementById("loading").innerHTML = `<div class="text-danger">讀取資料失敗，請檢查權限或網路連線。</div>`;
+        console.error("讀取失敗：", error);
+        document.getElementById("loading").innerHTML = "讀取失敗，請檢查資料庫權限。";
       }
     }
 
@@ -147,36 +116,24 @@
       tbody.innerHTML = "";
 
       players.forEach((player, index) => {
-        const currentRank = index + 1; 
-        
-        // 處理排名樣式
+        const currentRank = index + 1;
         let rankHtml = currentRank;
         if (currentRank === 1) rankHtml = `<span class="rank-1">🥇 ${currentRank}</span>`;
         if (currentRank === 2) rankHtml = `<span class="rank-2">🥈 ${currentRank}</span>`;
         if (currentRank === 3) rankHtml = `<span class="rank-3">🥉 ${currentRank}</span>`;
 
-        // 處理趨勢箭頭
-        let trendHtml = `<span class="trend-flat">-</span>`;
-        if (player.prevRank > 0) { 
-          if (currentRank < player.prevRank) {
-            trendHtml = `<span class="trend-up">▲ ${player.prevRank - currentRank}</span>`;
-          } else if (currentRank > player.prevRank) {
-            trendHtml = `<span class="trend-down">▼ ${currentRank - player.prevRank}</span>`;
-          }
-        }
+        // 處理數值顯示，避免 .toFixed 報錯
+        const displayHandicap = (player.handicap !== null) ? player.handicap.toFixed(1) : "--";
+        const displayAvgScore = (player.avgScore !== null) ? player.avgScore.toFixed(1) : "--";
 
         const tr = document.createElement("tr");
         tr.innerHTML = `
           <td>${rankHtml}</td>
-          <td>${trendHtml}</td>
-          <td>
-            <a href="profile.html?player=${encodeURIComponent(player.id)}" class="player-name">
-              ${player.name}
-            </a>
-          </td>
+          <td>-</td>
+          <td><a href="profile.html?player=${encodeURIComponent(player.id)}" class="player-name">${player.name}</a></td>
           <td>${player.rounds}</td>
-          <td>${player.avgScore.toFixed(1)}</td>
-          <td class="fw-bold text-success">${player.handicap.toFixed(1)}</td>
+          <td>${displayAvgScore}</td>
+          <td class="fw-bold text-success">${displayHandicap}</td>
         `;
         tbody.appendChild(tr);
       });
